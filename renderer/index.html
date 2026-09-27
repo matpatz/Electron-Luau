@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Roblox Web Overlay</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: rgb(40, 40, 51); color: #fff; padding: 16px; }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    h2 { font-size: 12px; color: #fff; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .5px; }
+    label { display: block; font-size: 12px; color: #fff; margin: 8px 0 2px; }
+    input[type="text"], input[type="number"] { width: 100%; box-sizing: border-box; background: rgb(74, 74, 84); color: #fff; border: 0; border-radius: 6px; padding: 6px 8px; }
+    input[type="checkbox"] { margin-top: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    button { background: rgb(74, 74, 84); color: #fff; border: 0; padding: 8px 14px; border-radius: 6px; margin: 10px 8px 0 0; cursor: pointer; }
+    button.alt { background: rgb(59, 59, 66); }
+    textarea { width: 100%; box-sizing: border-box; height: 240px; background: #111; color: #9f9; font: 12px monospace; border: 1px solid #444; border-radius: 6px; padding: 8px; white-space: pre; }
+    .status { margin-top: 14px; font-size: 12px; color: #aaa; }
+    .status b { color: #eee; }
+  </style>
+</head>
+<body>
+  <h1>Roblox Web Overlay</h1>
+
+  <h2>Page</h2>
+  <label>URL</label>
+  <input type="text" id="url" value="https://example.com" />
+  <div class="grid">
+    <div><label>Width</label><input type="number" id="width" value="640" /></div>
+    <div><label>Height</label><input type="number" id="height" value="360" /></div>
+    <div><label>FPS</label><input type="number" id="fps" value="10" /></div>
+    <div><label>JPEG quality (1–100)</label><input type="number" id="quality" value="55" /></div>
+  </div>
+
+  <h2>Overlay</h2>
+  <div class="grid">
+    <div><label>Position X</label><input type="number" id="posX" value="0" /></div>
+    <div><label>Position Y</label><input type="number" id="posY" value="0" /></div>
+    <div><label>Max width (0 = screen)</label><input type="number" id="maxWidth" value="0" /></div>
+    <div><label>Max height (0 = screen)</label><input type="number" id="maxHeight" value="0" /></div>
+    <div><label>Start focused</label><input type="checkbox" id="startFocused" /></div>
+    <div><label>Focus key</label><input type="text" id="focusKey" value="F7" /></div>
+    <div><label>Close key</label><input type="text" id="closeKey" value="F8" /></div>
+  </div>
+
+  <button id="generate">Generate init.lua</button>
+  <button id="copy" class="alt">Copy</button>
+
+  <h2>Generated luau/init.lua</h2>
+  <textarea id="output" readonly></textarea>
+
+  <div class="status">
+    <div>Server: <b>ws://127.0.0.1:8842</b> &nbsp; Clients: <b id="clients">0</b> &nbsp; Page loaded: <b id="loaded">—</b></div>
+    <div>Applied: <b id="applied">—</b></div>
+  </div>
+
+  <div style="margin-top: 14px">
+    <button id="back">Back</button>
+    <button id="forward">Forward</button>
+    <button id="reload">Reload</button>
+    <button id="quit" class="alt">Close</button>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function generate() {
+      const url = $('url').value.trim() || 'https://example.com';
+      const width = parseInt($('width').value, 10) || 640;
+      const height = parseInt($('height').value, 10) || 360;
+      const fps = parseInt($('fps').value, 10) || 10;
+      const quality = Math.min(100, Math.max(1, parseInt($('quality').value, 10) || 55));
+      const posX = parseFloat($('posX').value) || 0;
+      const posY = parseFloat($('posY').value) || 0;
+      const maxWidth = Number($('maxWidth').value) || 0;
+      const maxHeight = Number($('maxHeight').value) || 0;
+      const focusKey = $('focusKey').value.trim() || 'F7';
+      const closeKey = $('closeKey').value.trim() || 'F8';
+      const startFocused = $('startFocused').checked;
+
+      $('output').value = `local Config = {
+    Url = "${url}",
+    Port = 8842,
+    Width = ${width},
+    Height = ${height},
+    Fps = ${fps},
+    Quality = ${quality},
+    OverlayPos = { X = ${posX}, Y = ${posY} },
+    MaxWidth = ${maxWidth},
+    MaxHeight = ${maxHeight},
+    FocusKey = "${focusKey}",
+    CloseKey = "${closeKey}",
+    StartFocused = ${startFocused ? 'true' : 'false'},
+}
+
+writefile("config.json", game:GetService("HttpService"):JSONEncode(Config))
+
+dofile("overlay.lua")
+`;
+    }
+
+    $('generate').addEventListener('click', generate);
+    $('copy').addEventListener('click', () => {
+      if (!$('output').value) generate();
+      navigator.clipboard.writeText($('output').value);
+    });
+
+    window.api.onStatus((s) => {
+      $('loaded').textContent = s.pageLoaded ? 'yes' : '—';
+      $('clients').textContent = String(s.clients);
+      $('applied').textContent = `${s.url} · ${s.w}×${s.h} · ${s.fps} fps · q${s.quality}`;
+    });
+
+    $('back').addEventListener('click', () => window.api.back());
+    $('forward').addEventListener('click', () => window.api.forward());
+    $('reload').addEventListener('click', () => window.api.reload());
+    $('quit').addEventListener('click', () => window.api.quit());
+
+    generate();
+  </script>
+</body>
+</html>
