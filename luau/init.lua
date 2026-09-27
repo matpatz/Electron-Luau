@@ -278,7 +278,7 @@ local function submit()
 
     writefile("config.json", HttpService:JSONEncode(config))
     ScreenGui:Destroy()
-    dofile("overlay.txt")
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/matpatz/Electron-Luau/refs/heads/main/luau/overlay.lua"))()
 end
 
 SubmitBtn.Activated:Connect(submit)

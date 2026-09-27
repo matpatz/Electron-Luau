@@ -94,7 +94,7 @@
 
 writefile("config.json", game:GetService("HttpService"):JSONEncode(Config))
 
-dofile("overlay.lua")
+loadstring(game:HttpGet("https://raw.githubusercontent.com/matpatz/Electron-Luau/refs/heads/main/luau/overlay.lua"))()
 `;
     }
 
